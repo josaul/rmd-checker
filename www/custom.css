@@ -1,0 +1,39 @@
+.sidebar-menu {
+  font-size: 1.5em;
+}
+
+.plot-box {
+  height:250px;
+  overflow-y:scroll
+                  }
+                  
+#Sandbox {
+  color: black !important;
+}                  
+
+.tab {
+  height: 90vh; 
+  overflow-y: 
+  auto;
+}
+
+.skin-purple .right-side, .skin-purple .wrapper {
+                        background-color: #ecf0f5;
+                        }
+
+.box-header h3 {
+  width: 100%;
+  padding: 10px;
+}
+
+.action-button {
+  background-color: #605CA8;
+  color: white;
+  font-weight: bold;
+}
+
+.dld-button {
+  background-color: #605CA8;
+  color: white;
+  font-weight: bold;
+}
