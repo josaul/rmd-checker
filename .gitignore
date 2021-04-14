@@ -3,3 +3,7 @@
 .RData
 .Ruserdata
 rsconnect
+Answer_Sheet.csv
+Model_Answer.R
+Blank_Test.Rmd
+ExamScripts/

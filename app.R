@@ -30,9 +30,6 @@
 
 #add a notes column so you can make notes about answers
 
-# ?bfi doesn't show up.
-#scree() causes an error
-# #or #or is at the end... 
 # mutliple lines doesn't compute the first one it does if it is the last
 
 
@@ -170,22 +167,30 @@ main_tab <- tabItem(
 info_tab <- tabItem(
   tabName = "info_tab",
   h2("Instructions"),
-  column(width=12, "Instructions: Select the question you are going to mark, 
-                 compare student answers to model answer and award marks in the 'marks' column by double clicking it.
-                 You can use tab or arrows to go down the column and input marks.
-                 When you have done you press CTRL ENTER to save the marks.
-                 You can overwrite marks to change your mind.
-                 If you do not enter a 0 it will think you haven't marked that question.
-                 If you click on the model answer, the code output will generate in the sidebar
-                 (either text or plot depending on the code).
-                 When you press the student code lines, their code will generate in the sidebar too for comparison.
-                 Finally the 'sandbox' area of the sidebar is for copying/editing student code.
-                  The download button can be hit when you want to download your marks as a csv. In
-         the plot below, grey=marked, beige=not yet marked. Black numbers are each person's avg score, blue numbers
-         are each question's average score."),
+  column(width=12, 
+  p("Select the question you are going to mark, 
+                 compare student answers to model answer and 
+                 award marks in the 'marks' column by double clicking it.
+                 You can use tab or arrows to go down the 
+                  column and input marks."),
+  p("When you are finished you press CTRL & ENTER to save the marks.
+                 You can overwrite marks if change your mind. We advise
+    that you 'save' entries in this way often."),
+  p("If you do not enter a 0 it will think you haven't marked that question."),
+  p("For the model answer, the code output will generate in the sidebar
+                 (either text or plot depending on the code). If multiple
+                options are possible you need to select each one to view it."),
+  p("When you select the student code lines, their code will generate 
+                in the sidebar too for comparison."),
+  p("The 'sandbox' area of the sidebar is for copying/editing student code if
+    you need to do so to check it or see if it works when modified."),
+  p("The download button can be hit when you want to download your marks as a csv."),
+  p("The plot below is a visual representation of progress, grey = marked items, 
+      beige = not yet marked items. Black numbers are each person's avg score, blue numbers
+         are each question's average score.")),
 
   
-        box(id = "heatmap", width=12, title = "Summary of marking so far", collapsible = F,
+        box(id = "heatmap", width=12, title = "Summary of marking so far",
             plotOutput("heatmap"))
       )
 
@@ -452,7 +457,7 @@ server <- function(input, output, session){
   
 
   
-  #Download a csv
+  # Download a csv
   output$downloadData <- downloadHandler(
     
     filename=paste('marking_file', Sys.Date(), '.csv', sep=""), 
