@@ -1,0 +1,82 @@
+---
+title: "chisq2"
+author: "Jo Saul"
+date: "13/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE, purl=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For this homework we will be discussing a hypothetical experiment where children are screened for language difficulties and then a year later parents are sent language questionnaires to fill in and return. The questionnaire scores are converted to z-scores, but as commonly happens in real research, many parents did not return the questionnaires. The goal of this analysis is to assess whether there is systematic bias in the response rates between parents of children with typical language versus those previously identified as having developmental langauge disorder (DLD) at the initial screening phase.
+
+```{r initial}
+library(tidyverse)
+library(broom)
+library(lsr)
+```
+
+
+Q1. Download the file `questionnaire_responses.csv` and save the data as `responses`
+```{r q01}
+responses <- read.csv('questionnaire_responses.csv')
+```
+
+
+Q2. Have a look at the data and make a quick summary table to view  mean scores by group (DLD/TD). HINT remember what to do if there are missing data when you perform a summary function.
+```{r q02}
+responses %>% group_by(DLD) %>% summarise(mean=mean(zscore, na.rm=TRUE))
+```
+
+
+Q3. Copy the code below and use the help pane or ? function to determine what the code is doing. Write your answer below
+```{r q03}
+responses <- responses %>% mutate(response=if_else(is.na(zscore), 'not_returned', 'returned'))
+
+#The code turns zscore (continuous) into a categorical variable so that we can run a chi sq. The observations are divided into those who have a zscore (returned) and those who don't (not_returned).                
+```
+
+
+Q4. Display a counts table of those who did and did not return the questionnaire grouped by language status
+```{r q04}
+responses %>% group_by(DLD, response) %>% count()
+```
+
+
+Q5. Plot the data using a bargraph. Change the x axis title to 'child language status'
+```{r q05}
+ggplot(responses, aes(x = DLD, fill = response)) +
+  geom_bar(position = "dodge") + labs(x='child language status')
+```
+
+Q6. Calculate chi sq, save in a tidy table called `results_table` and then display that table
+```{r q06}
+results <- chisq.test(x = responses %>% pull(DLD), 
+                      y = responses %>% pull(response), 
+                      correct = FALSE) 
+results_table <- results %>% tidy()
+results_table
+```
+
+Q7. Check the assumption of expected frequency > 5 has been met by accessing the correct part of the results object
+```{r q07}
+results$expected
+```
+The assumption was met 
+
+Q8. Calculate effect size, save it as `eff_size` and display it
+```{r q08}
+
+eff_size <- cramersV(x = responses %>% pull(DLD), 
+                      y = responses %>% pull(response), 
+                      correct = FALSE)
+eff_size
+```
+
+Q9. Report the results as you would in a paper
+
+```{r q09}
+#The proportion of parents who returned their questionnaires was associated with child languge status, in that signficiantly fewer parents of children with DLD returned their questionnaires (56%) vs those with typically developing language (83%), $x^2$ (1, N = 200) = 17.20, p < .001, V = 0.29
+```
+

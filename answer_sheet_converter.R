@@ -1,6 +1,6 @@
 #this script converts a Rmd to an answer csv and an R file to upload
 
-#need to change names at step 1, 2 and 3 and then add marks vector at 4
+#need to change names at step 1, 2 and 3 (if needed) and then add marks vector at 4
 
 
 #Jobs when converting a model answer to format:
@@ -17,10 +17,10 @@
 library(tidyverse)
 
 #1. Turn the model answer into an R file- change name here
-knitr::purl('Demo2.Rmd', documentation=3)
+knitr::purl('Model_Answer.Rmd', documentation=3)
 
 #2 Knit the model answer Rmd to get a list of questions - change name here
-person <- readLines('Demo2.R') # this is all the lines
+person <- readLines('Model_Answer.R') # this is all the lines
 
 brk <- '## ----'
 
@@ -113,7 +113,7 @@ y <- summary #this needs to reference the function code
 y <- y %>% select(-subquestion)
 
 #3. Reading in the questions - change name here
-quest <- readLines('Demo2.Rmd')
+quest <- readLines('Model_Answer.Rmd')
 
 tibble<- tibble(text=quest) %>% mutate(question=substr(text,1,1)) %>% #identify the Qs
   filter(question=="Q")
@@ -126,9 +126,13 @@ tibble <- tibble %>% mutate(question=unique(y$question))
 final <- full_join(y, tibble) %>% mutate(marks=1)
 #marks will need to be a vector (I have writted it as all 1s)
 
-final <- final %>% select(question=question, question_text=text, answer=code_final, marks=marks)
+#5. Add marker names (default is all one marker)
+#final <- full_join(y, tibble) %>% mutate(marker_name="Marker1")
 
-#4. write the file - don't change this name but ensure it is in the main file
+final <- final %>% select(question=question, question_text=text, answer=code_final, 
+                          marks=marks) #, marker_name=marker_name) for later
+
+#6. write the file - don't change this name but ensure it is in the main file
 write.csv(final, 'Answer_Sheet.csv', row.names = FALSE )
 
 

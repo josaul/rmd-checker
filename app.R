@@ -20,8 +20,7 @@
 
 
 ## Nice to haves
-
-#conditionally hide output boxes if they are empty
+#get the plots to hide in non-plot and vice versa for code output?
 
 #move more parts to source files?
 
@@ -30,8 +29,6 @@
 #add something to shorten the candidate name or the column width in the table
 
 #add a notes column so you can make notes about answers
-
-#put it on github
 
 # ?bfi doesn't show up.
 #scree() causes an error
@@ -62,7 +59,7 @@ source("R/func.R")
 #static data input into the app = Model answers and student answrs
 
 # this runs the code to generate the objects assumed to be included in the Model answers
-source("Demo2.R") # this file is saved in the main folder (has been converted from Rmd)
+source("Model_Answer.R") # this file is saved in the main folder (has been converted from Rmd)
 
 # this is the csv with the model answers saved in it (also converted from Rmd)
 adfcsv <- read.csv('Answer_Sheet.csv', stringsAsFactors = FALSE) 
@@ -119,14 +116,14 @@ for (h in 1:length(files)) {
 
 #--- end of loop
 
-#Create this object so that the input button for question can be populated
-qs <- df %>% pull(question) %>% unique() # list of questions
-
 #name the columns
 colnames(df) <- c('question', 'answer', 'person')
 
 #arrange by question
 df <- df %>% arrange(question)
+
+#Create this object so that the input button for question can be populated
+qs <- df %>% pull(question) %>% unique() # list of questions
 
 #add an empty marks column
 df$marks <- ""
@@ -183,7 +180,9 @@ info_tab <- tabItem(
                  (either text or plot depending on the code).
                  When you press the student code lines, their code will generate in the sidebar too for comparison.
                  Finally the 'sandbox' area of the sidebar is for copying/editing student code.
-                  The download button can be hit when you want to download your marks as a csv."),
+                  The download button can be hit when you want to download your marks as a csv. In
+         the plot below, grey=marked, beige=not yet marked. Black numbers are each person's avg score, blue numbers
+         are each question's average score."),
 
   
         box(id = "heatmap", width=12, title = "Summary of marking so far", collapsible = F,
@@ -218,20 +217,20 @@ ui <- dashboardPage(
       menuItem("Info", tabName = "info_tab",
                icon = icon("info"))
     ),
-    box(id = "mod_output", width=12, title = "Model Output",
-        verbatimTextOutput("codeResultsA")
+    div(id="hide1",box(id = "mod_output", width=12, title = "Model Output",
+        verbatimTextOutput("codeResultsA"))
     ),
-    box(id = "student_output", width=12, title = "Student Output",
-        verbatimTextOutput("codeResults")
+    div(id="hide2", box(id = "student_output", width=12, title = "Student Output",
+        verbatimTextOutput("codeResults"))
     ),
-    box(id = "mod_plot", class="plot-box", width=12, title = "Model Plot",
-        plotOutput("codePlotA"),
+    div(id="hide3", box(id = "mod_plot", class="plot-box", width=12, title = "Model Plot",
+        plotOutput("codePlotA", width="100%", height="100%"), # how much of the box is filled by the plot
         collapsible=T, collapsed=F
-    ),
-    box(id = "student_plot", class="plot-box", width=12, title = "Student Plot",
-        plotOutput("codePlot"),
+    )),
+    div(id="hide4", box(id = "student_plot", class="plot-box", width=12, title = "Student Plot",
+        plotOutput("codePlot", width="100%", height="100%"),
         collapsible=T, collapsed=F
-    ),
+    )),
     box(title='Sandbox',width=12,
         div(id="SB", textInput(inputId = "testcodeSB", 
                                label= "Sandbox", 
@@ -241,8 +240,9 @@ ui <- dashboardPage(
     
     box(width=12, id="SBresults", title="Sandbox Result",
         verbatimTextOutput("codeResultsSB"), collapsible=T),
-    box(width=12,id="SBplot", title="Sandbox Plot",
-        plotOutput("codePlotSB"), collapsible=F, collapsed=F)
+    
+    box(width=12,id="SBplot", class="plot-box", title="Sandbox Plot",
+        plotOutput("codePlotSB", width="100%", height="100%"), collapsible=F, collapsed=F)
   ),   #end sidebar
   
   dashboardBody(
@@ -285,7 +285,7 @@ server <- function(input, output, session){
   
   # RENDER TABLES -------
   
-  output$qtext <- renderPrint(adfcsv %>% 
+  output$qtext <- renderText(adfcsv %>% 
                                filter(question==input$qchoice) %>% 
                                pull(question_text) %>% 
                                pluck(1))
@@ -336,7 +336,7 @@ server <- function(input, output, session){
   
     output$heatmap <- renderPlot({
       
-      lastq <- master_dat$question[nrow(master_dat)]
+      lastq <- "qtotal"
       firstp <- master_dat$person[1]
       
       data_person <- master_dat %>% group_by(person) %>% mutate(marks=as.numeric(marks)) %>%
@@ -350,17 +350,21 @@ server <- function(input, output, session){
         summarise(mean_marks=mean(marks, na.rm=T) %>% round(1)) %>% mutate(person=firstp)
       data_q[is.nan(data_q)] <- NA #turns NaNs into NAs
       
+      master_dat <- master_dat %>% mutate(done=if_else(marks=="", 0, 1) %>% as.factor())    
+      
       #plots a grid of which marks been done and averages
-      ggplot(master_dat %>% mutate(done=if_else(marks=="", FALSE, TRUE)), aes(x = question, y = person, fill = done)) +
+      ggplot(master_dat, aes(x = question, y = person, fill = done)) +
         geom_tile(color='white') + theme_classic() + 
-        scale_fill_manual(values=c('white', 'grey')) + 
+        scale_fill_manual(values=c('bisque3', 'azure3')) + 
         theme(legend.position='none') + 
         annotate(geom="text", x=lastq, y=data_person$person, label=data_person$mean_marks,
-                 color="red") +
+                 color="black") +
         annotate(geom="text", x=data_q$question, y=data_q$person, label=data_q$mean_marks,
                  color="blue") + labs(x="Question", y="Student")
       
-    }) #there will be one spot where the numbers overlap - can't fix this for now!
+    
+    
+  })
     
   })
   
@@ -384,9 +388,19 @@ server <- function(input, output, session){
       eval(parse(text=codeInput()), envir=shinyEnv)})
     output$codePlot <- renderPlot({
       eval(parse(text=codeInput()), 
-           envir=shinyEnv)},
-      width=450,
-      height=350) #this resizes the plot
+           envir=shinyEnv)}) #weight and height here fix the plot size (can be larger than box)
+    
+    if(is.null(eval(parse(text=codeInput()), envir=shinyEnv))){
+      print("hide")
+      shinyjs::hide(id = "hide2") #hiding only works with divs not boxes!
+      shinyjs::hide(id = "hide4")
+    }else{
+      print("show")
+      shinyjs::show(id = "hide2") 
+      shinyjs::show(id = "hide4")
+    }
+    
+    
   })
   
   observeEvent(input$qchoice, {# need this one to select default to 1
@@ -402,6 +416,18 @@ server <- function(input, output, session){
       eval(parse(text=codeInputA()), 
            envir=shinyEnv) #for code wiht graphic output
     })
+    
+    #this tests if code returns NULL or not, to try to hide pane             
+    if(is.null(eval(parse(text=codeInputA()), envir=shinyEnv))){
+      print("hide")
+      shinyjs::hide(id = "hide1") #hiding only works with divs not boxes!
+      shinyjs::hide(id = "hide3")
+    }else{
+      print("show")
+      shinyjs::show(id = "hide1") 
+      shinyjs::show(id = "hide3")
+    }
+
   })
   
   # #this evaluates the model answer code
@@ -419,7 +445,7 @@ server <- function(input, output, session){
       eval(parse(text=codeInputA()),
            envir=shinyEnv) #for code wiht graphic output
     })
-
+    
     print(selA)
 
   })
